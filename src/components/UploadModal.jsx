@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useModal } from '../lib/useModal.jsx';
 import { useAuth } from '../lib/useAuth.jsx';
 import { useMemories } from '../lib/useMemories.jsx';
@@ -40,9 +40,13 @@ export default function UploadModal() {
     }
   }, [open, prefillDate, editing]);
 
-  if (!open || !isAdmin) return null;
+  const newPreviews = useMemo(() => files.map(f => URL.createObjectURL(f)), [files]);
 
-  const newPreviews = files.map(f => URL.createObjectURL(f));
+  useEffect(() => {
+    return () => newPreviews.forEach(URL.revokeObjectURL);
+  }, [newPreviews]);
+
+  if (!open || !isAdmin) return null;
   const update = k => e => {
     setForm(s => ({ ...s, [k]: e.target.value }));
     if (errors[k]) setErrors(er => ({ ...er, [k]: undefined }));
@@ -85,7 +89,7 @@ export default function UploadModal() {
   const fieldCls = key => 'field' + (errors[key] ? ' has-error' : '');
 
   return (
-    <div className="modal-backdrop open" onClick={e => e.target === e.currentTarget && closeModal()}>
+    <div className="modal-backdrop open">
       <div className="modal">
         <div className="modal-head">
           <h3>{editing ? 'Edit Memory' : 'New Memory'}</h3>
